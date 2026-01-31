@@ -22,13 +22,13 @@ def _write_silence_wav(path: Path, seconds: float = 1.0, sample_rate: int = 1600
         wf.writeframes(b"\x00\x00" * n_frames)
 
 
-def convert_mp3_to_wav(
-    input_mp3: Path,
+def convert_audio_to_wav(
+    input_audio: Path,
     output_wav: Path,
     log_fn,
     cancel_check,
 ) -> None:
-    """Convert MP3 to 16kHz mono WAV using ffmpeg.
+    """Convert audio to 16kHz mono WAV using ffmpeg.
 
     In test mode we generate a tiny silent WAV instead of invoking ffmpeg.
     """
@@ -49,7 +49,7 @@ def convert_mp3_to_wav(
         "ffmpeg",
         "-y",  # overwrite
         "-i",
-        str(input_mp3),
+        str(input_audio),
         "-ac",
         "1",  # mono
         "-ar",

@@ -118,7 +118,11 @@ export default function App() {
         if (event.payload.type !== "drop") return;
         const paths = event.payload.paths || [];
         for (const path of paths) {
-          if (!path.toLowerCase().endsWith(".mp3")) continue;
+          if (!path.toLowerCase().endsWith(".mp3") &&
+              !path.toLowerCase().endsWith(".m4a") &&
+              !path.toLowerCase().endsWith(".wav")) {
+            continue;
+          }
           try {
             const created = await createJobFromPath(path);
             setJobs((prev) => [created, ...prev]);
@@ -141,7 +145,10 @@ export default function App() {
 
   const handleFiles = async (files: FileList) => {
     for (const file of Array.from(files)) {
-      if (!file.name.toLowerCase().endsWith(".mp3")) continue;
+      const name = file.name.toLowerCase();
+      if (!name.endsWith(".mp3") && !name.endsWith(".m4a") && !name.endsWith(".wav")) {
+        continue;
+      }
       try {
         const created = await createJob(file);
         setJobs((prev) => [created, ...prev]);
@@ -193,7 +200,7 @@ export default function App() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="audio/mpeg"
+        accept="audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav"
         multiple
         style={{ display: "none" }}
         onChange={handleFileInputChange}

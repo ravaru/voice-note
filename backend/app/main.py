@@ -153,8 +153,11 @@ def model_download_start(payload: dict) -> dict:
 @app.post("/jobs")
 def create_job(file: UploadFile = File(...)) -> dict:
     # Basic extension check; not a full mime validation.
-    if not file.filename or not file.filename.lower().endswith(".mp3"):
-        raise HTTPException(status_code=400, detail="Only .mp3 files are supported")
+    if not file.filename or not file.filename.lower().endswith((".mp3", ".m4a", ".wav")):
+        raise HTTPException(
+            status_code=400,
+            detail="Only .mp3, .m4a, .wav files are supported",
+        )
 
     data = file.file.read()
     job = create_job_from_upload(file.filename, data)
@@ -167,8 +170,11 @@ class JobPathRequest(BaseModel):
 
 @app.post("/jobs/from-path")
 def create_job_from_path_endpoint(payload: JobPathRequest) -> dict:
-    if not payload.path.lower().endswith(".mp3"):
-        raise HTTPException(status_code=400, detail="Only .mp3 files are supported")
+    if not payload.path.lower().endswith((".mp3", ".m4a", ".wav")):
+        raise HTTPException(
+            status_code=400,
+            detail="Only .mp3, .m4a, .wav files are supported",
+        )
     try:
         job = create_job_from_path(Path(payload.path))
         return job.to_dict()

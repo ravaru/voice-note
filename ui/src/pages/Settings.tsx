@@ -112,6 +112,14 @@ const Settings = forwardRef<SettingsHandle, Props>(function Settings(
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
 
+  useEffect(() => {
+    if (!status) return;
+    const timer = setTimeout(() => {
+      setStatus(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   const save = async () => {
     setStatus(null);
     if (!cfg) return;
@@ -189,7 +197,7 @@ const Settings = forwardRef<SettingsHandle, Props>(function Settings(
   return (
     <div className="settings-page">
       <div className="settings-body">
-        <div className="settings-tabs">
+        <div className="settings-tabs settings-tabs-row">
           <Tabs
             tabs={[
               { id: "general", label: t("settings.tabs.general") },
@@ -199,6 +207,7 @@ const Settings = forwardRef<SettingsHandle, Props>(function Settings(
             activeId={activeTab}
             onChange={setActiveTab}
           />
+          {status && <div className="text-muted">{status}</div>}
         </div>
 
         {activeTab === "general" && (
@@ -426,7 +435,6 @@ const Settings = forwardRef<SettingsHandle, Props>(function Settings(
         )}
       </div>
 
-      {status && <div className="text-muted">{status}</div>}
     </div>
   );
 });

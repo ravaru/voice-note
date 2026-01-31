@@ -8,7 +8,43 @@ use std::{
 };
 
 use tauri::{Manager, RunEvent};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+fn find_backend_dir() -> Option<PathBuf> {
+    if let Ok(explicit) = std::env::var("VOICENOTE_BACKEND_DIR") {
+        let path = PathBuf::from(explicit);
+        if path.join("app/main.py").exists() {
+            return Some(path);
+        }
+    }
+
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Ok(current) = std::env::current_dir() {
+        candidates.push(current);
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            candidates.push(dir.to_path_buf());
+        }
+    }
+
+    for base in candidates {
+        let mut cursor: &Path = &base;
+        for _ in 0..6 {
+            let probe = cursor.join("backend");
+            if probe.join("app/main.py").exists() {
+                return Some(probe);
+            }
+            if let Some(parent) = cursor.parent() {
+                cursor = parent;
+            } else {
+                break;
+            }
+        }
+    }
+
+    None
+}
 
 // Store child process handle so we can terminate on exit.
 struct BackendState {
@@ -16,15 +52,14 @@ struct BackendState {
 }
 
 fn spawn_backend() -> std::io::Result<Child> {
-    // The backend lives in ../backend relative to src-tauri.
-    // Prefer the local venv Python to ensure dependencies are available.
-    let backend_dir = std::env::current_dir()
-        .unwrap_or_else(|_| PathBuf::from("."))
-        .join("../../backend");
-
-    let backend_dir = backend_dir
-        .canonicalize()
-        .unwrap_or(backend_dir);
+    // Find backend directory by walking up from current dir / executable,
+    // or use VOICENOTE_BACKEND_DIR if provided.
+    let backend_dir = find_backend_dir().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "backend directory not found (set VOICENOTE_BACKEND_DIR)",
+        )
+    })?;
 
     let venv_python = backend_dir.join(".venv/bin/python3");
     let mut candidates: Vec<PathBuf> = vec![venv_python, PathBuf::from("python3")];
@@ -42,6 +77,10 @@ fn spawn_backend() -> std::io::Result<Child> {
         ])
         .current_dir(&backend_dir)
         .env("PYTHONUNBUFFERED", "1")
+        .env(
+            "PATH",
+            "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        )
         // Inherit stdout/stderr so users can see logs in terminal.
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());

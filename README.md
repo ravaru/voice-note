@@ -1,6 +1,10 @@
-# plaud-stt-obsidian
+# VoiceNote
 
-Локальное desktop-приложение для транскрибации MP3 и экспорта в Obsidian. MVP ориентирован на macOS Apple Silicon. Всё работает локально: аудио, модели и результаты не уходят в сеть.
+Локальное desktop-приложение для транскрибации MP3/M4A/WAV и экспорта в Obsidian. MVP ориентирован на macOS Apple Silicon. Всё работает локально: аудио, модели и результаты не уходят в сеть.
+
+## Документация пользователя
+
+См. `USER_GUIDE.md`.
 
 ## Архитектура
 
@@ -14,7 +18,7 @@
 
 ## Pipeline
 
-1. **Upload**: MP3 попадает в очередь (`POST /jobs`), сохраняется как `backend/out/<job_id>/original.mp3`.
+1. **Upload**: MP3/M4A/WAV попадает в очередь (`POST /jobs`), сохраняется как `backend/out/<job_id>/original.<ext>`.
 2. **Convert**: `ffmpeg` -> `audio.wav` (16kHz, mono).
 3. **VAD**: silero-vad создаёт временные чанки речи (pad 0.2s, merge gap < 0.6s, max 35s).
 4. **Transcribe**: faster-whisper по каждому чанку, время сегментов приводится к абсолютному.

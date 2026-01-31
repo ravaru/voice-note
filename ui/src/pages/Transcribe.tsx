@@ -39,7 +39,10 @@ export default function Transcribe() {
   const handleFiles = async (files: FileList) => {
     for (const file of Array.from(files)) {
       // Only accept mp3 for MVP.
-      if (!file.name.toLowerCase().endsWith(".mp3")) continue;
+      const name = file.name.toLowerCase();
+      if (!name.endsWith(".mp3") && !name.endsWith(".m4a") && !name.endsWith(".wav")) {
+        continue;
+      }
       await createJob(file);
     }
   };

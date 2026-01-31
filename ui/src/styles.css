@@ -719,6 +719,13 @@ details > summary::-webkit-details-marker {
   background: var(--bg);
 }
 
+.settings-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .tab {
   border: none;
   background: transparent;

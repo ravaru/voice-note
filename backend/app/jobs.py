@@ -21,7 +21,7 @@ from app.llm.summarize import (
     OllamaUnavailableError,
 )
 from app.media.clip import create_clip_mp3
-from app.pipeline.convert import convert_mp3_to_wav
+from app.pipeline.convert import convert_audio_to_wav
 from app.pipeline.vad import run_vad
 from app.pipeline.transcribe import transcribe_chunks
 from app.pipeline.merge import segments_to_text, segments_to_srt
@@ -162,14 +162,15 @@ def delete_job(job_id: str) -> bool:
 
 
 def create_job_from_upload(filename: str, data: bytes) -> Job:
-    """Create job and save uploaded MP3 bytes to disk."""
+    """Create job and save uploaded audio bytes to disk."""
 
     ensure_app_dirs()
     job_id = uuid.uuid4().hex
     paths = ensure_job_dir(job_id)
 
-    # Save original MP3 as required by spec.
-    paths.original_mp3.write_bytes(data)
+    # Save original audio with its extension for easier inspection.
+    original_path = _original_audio_path(paths.job_dir, filename)
+    original_path.write_bytes(data)
 
     job = Job(
         id=job_id,
@@ -179,7 +180,7 @@ def create_job_from_upload(filename: str, data: bytes) -> Job:
         stage=STAGE_CONVERT,
         logs=[],
         created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        audio_path=str(paths.original_mp3),
+        audio_path=str(original_path),
     )
 
     _append_log(job, "Job created")
@@ -193,18 +194,18 @@ def create_job_from_upload(filename: str, data: bytes) -> Job:
 
 
 def create_job_from_path(mp3_path: Path) -> Job:
-    """Create job by copying an existing MP3 file into the job folder."""
+    """Create job by copying an existing audio file into the job folder."""
 
     if not mp3_path.exists():
         raise FileNotFoundError(f"File not found: {mp3_path}")
-    if mp3_path.suffix.lower() != ".mp3":
-        raise ValueError("Only .mp3 files are supported")
+    if mp3_path.suffix.lower() not in {".mp3", ".m4a", ".wav"}:
+        raise ValueError("Only .mp3, .m4a, .wav files are supported")
 
     ensure_app_dirs()
     job_id = uuid.uuid4().hex
     paths = ensure_job_dir(job_id)
 
-    target = paths.original_mp3
+    target = _original_audio_path(paths.job_dir, mp3_path.name)
     shutil.copy2(mp3_path, target)
 
     job = Job(
@@ -229,14 +230,14 @@ def create_job_from_path(mp3_path: Path) -> Job:
 
 
 def create_job_from_inbox(mp3_path: Path) -> Job:
-    """Create job by moving a file from inbox to out/<job_id>/original.mp3."""
+    """Create job by moving a file from inbox to out/<job_id>/original.*."""
 
     ensure_app_dirs()
     job_id = uuid.uuid4().hex
     paths = ensure_job_dir(job_id)
 
     # Move file into job folder. This also prevents re-processing.
-    target = paths.original_mp3
+    target = _original_audio_path(paths.job_dir, mp3_path.name)
     mp3_path.replace(target)
 
     job = Job(
@@ -273,6 +274,13 @@ def _cancel_check(job: Job) -> bool:
     return job.cancel_requested
 
 
+def _original_audio_path(job_dir: Path, filename: str) -> Path:
+    ext = Path(filename).suffix.lower()
+    if ext not in {".mp3", ".m4a", ".wav"}:
+        ext = ".mp3"
+    return job_dir / f"original{ext}"
+
+
 def _process_job(job: Job) -> None:
     """Run the full pipeline for a job."""
 
@@ -286,7 +294,7 @@ def _process_job(job: Job) -> None:
         job.stage = STAGE_CONVERT
         job.progress = PROGRESS_CONVERT
         log("Starting convert step")
-        convert_mp3_to_wav(paths.original_mp3, paths.audio_wav, log, lambda: _cancel_check(job))
+        convert_audio_to_wav(Path(job.audio_path), paths.audio_wav, log, lambda: _cancel_check(job))
 
         job.stage = STAGE_VAD
         job.progress = PROGRESS_VAD
@@ -454,9 +462,11 @@ def _inbox_loop() -> None:
         if not _CONFIG.watch_inbox_enabled:
             continue
 
-        for mp3_path in INBOX_DIR.glob("*.mp3"):
+        for audio_path in INBOX_DIR.glob("*"):
+            if audio_path.suffix.lower() not in {".mp3", ".m4a", ".wav"}:
+                continue
             try:
-                create_job_from_inbox(mp3_path)
+                create_job_from_inbox(audio_path)
             except Exception:
                 # Avoid crashing watcher due to a single file.
                 continue

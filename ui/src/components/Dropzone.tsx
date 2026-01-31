@@ -46,7 +46,7 @@ export default function Dropzone({ onFiles }: Props) {
       <p>{t("dropzone.hint")}</p>
       <input
         type="file"
-        accept="audio/mpeg"
+        accept="audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav"
         multiple
         onChange={(e) => {
           if (e.target.files) onFiles(e.target.files);
