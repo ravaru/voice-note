@@ -1,6 +1,7 @@
 import React from "react";
 import type { Job, JobStatus } from "../api/types";
 import { open } from "@tauri-apps/plugin-shell";
+import { useI18n } from "../i18n/I18nProvider";
 
 type Props = {
   jobs: Job[];
@@ -10,34 +11,35 @@ type Props = {
 };
 
 const STATUS_LABELS: Record<JobStatus, string> = {
-  queued: "в очереди",
-  running: "в работе",
-  done: "готово",
-  error: "ошибка",
-  cancelled: "отменено",
+  queued: "jobs.status.queued",
+  running: "jobs.status.processing",
+  done: "jobs.status.done",
+  error: "jobs.status.error",
+  cancelled: "jobs.status.cancelled",
 };
 
 export default function JobTable({ jobs, onView, onExport, onCancel }: Props) {
+  const { t } = useI18n();
   return (
     <table style={{ width: "100%", marginTop: 16, borderCollapse: "collapse" }}>
       <thead>
         <tr>
-          <th style={{ textAlign: "left" }}>Файл</th>
-          <th>Статус</th>
-          <th>Прогресс</th>
-          <th>Действия</th>
+          <th style={{ textAlign: "left" }}>{t("jobs.file")}</th>
+          <th>{t("jobs.status")}</th>
+          <th>{t("jobs.progress")}</th>
+          <th>{t("jobs.actions")}</th>
         </tr>
       </thead>
       <tbody>
         {jobs.map((job) => (
           <tr key={job.id} style={{ borderTop: "1px solid #ddd" }}>
             <td>{job.filename}</td>
-            <td>{STATUS_LABELS[job.status] ?? job.status}</td>
+            <td>{t(STATUS_LABELS[job.status] ?? job.status)}</td>
             <td>{job.progress}%</td>
             <td>
-              <button onClick={() => onView(job)}>Просмотр</button>
+              <button onClick={() => onView(job)}>{t("jobs.actions.open")}</button>
               <button onClick={() => onExport(job)} style={{ marginLeft: 8 }}>
-                Экспорт в Obsidian
+                {t("details.export")}
               </button>
               <button
                 onClick={() => {
@@ -54,10 +56,10 @@ export default function JobTable({ jobs, onView, onExport, onCancel }: Props) {
                 }}
                 style={{ marginLeft: 8 }}
               >
-                Открыть папку вывода
+                {t("jobs.actions.open_folder")}
               </button>
               <button onClick={() => onCancel(job)} style={{ marginLeft: 8 }}>
-                Отменить
+                {t("jobs.actions.cancel")}
               </button>
             </td>
           </tr>

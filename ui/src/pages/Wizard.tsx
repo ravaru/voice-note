@@ -2,18 +2,30 @@ import React, { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { initializeConfig } from "../api/client";
 import type { AppConfig } from "../api/types";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import { useI18n } from "../i18n/I18nProvider";
+
+const STEPS = 3;
 
 type Props = {
   onFinished: () => void;
 };
 
+const getDefaultLanguage = (): "ru" | "en" => {
+  const system = navigator.language?.toLowerCase() ?? "en";
+  return system.startsWith("ru") ? "ru" : "en";
+};
+
 export default function Wizard({ onFinished }: Props) {
+  const { t } = useI18n();
   const [vaultPath, setVaultPath] = useState("");
   const [outputSubfolder, setOutputSubfolder] = useState("Transcripts");
   const [modelSize, setModelSize] = useState<
     "tiny" | "small" | "medium" | "large-v3"
   >("tiny");
   const [includeTimestamps, setIncludeTimestamps] = useState(true);
+  const [language] = useState<"ru" | "en">(getDefaultLanguage());
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +44,7 @@ export default function Wizard({ onFinished }: Props) {
         vault_path: vaultPath,
         output_subfolder: outputSubfolder || "Transcripts",
         model_size: modelSize,
-        language: "ru",
-        // Summarization defaults are set here so first run behaves predictably.
+        language,
         enable_summarization: true,
         auto_summarize_after_transcription: true,
         ollama_base_url: "http://127.0.0.1:11434",
@@ -45,51 +56,69 @@ export default function Wizard({ onFinished }: Props) {
       await initializeConfig(cfg);
       onFinished();
     } catch (e) {
-      setError("Не удалось сохранить настройки");
+      const message = e instanceof Error ? e.message : t("wizard.error");
+      setError(message);
     }
   };
 
   return (
-    <div>
-      <h2>Добро пожаловать в VoiceNote</h2>
+    <Card style={{ width: "min(720px, 100%)" }}>
+      <div className="section-title">{t("wizard.title")}</div>
+      <div className="stepper">
+        {Array.from({ length: STEPS }, (_, idx) => (
+          <div key={idx} className={`step ${idx < step ? "active" : ""}`} />
+        ))}
+      </div>
 
       {step === 1 && (
         <div>
-          <h3>Шаг 1: Выберите папку хранилища Obsidian</h3>
-          <button onClick={handlePickVault}>Выбрать папку</button>
-          <div style={{ marginTop: 8 }}>Выбрано: {vaultPath || "(нет)"}</div>
-          <div style={{ marginTop: 16 }}>
-            <button disabled={!vaultPath} onClick={() => setStep(2)}>
-              Далее
-            </button>
+          <div className="section-title">{t("wizard.step1")}</div>
+          <div className="form-row">
+            <Button variant="secondary" onClick={handlePickVault}>
+              {t("wizard.choose_folder")}
+            </Button>
+            <div className="text-muted">
+              {t("wizard.selected")}: {vaultPath || t("common.none")}
+            </div>
+          </div>
+          <div className="row-actions">
+            <Button variant="primary" disabled={!vaultPath} onClick={() => setStep(2)}>
+              {t("wizard.next")}
+            </Button>
           </div>
         </div>
       )}
 
       {step === 2 && (
         <div>
-          <h3>Шаг 2: Подпапка вывода</h3>
-          <input
-            value={outputSubfolder}
-            onChange={(e) => setOutputSubfolder(e.target.value)}
-            placeholder="Transcripts"
-          />
-          <div style={{ marginTop: 16 }}>
-            <button onClick={() => setStep(1)}>Назад</button>
-            <button onClick={() => setStep(3)} style={{ marginLeft: 8 }}>
-              Далее
-            </button>
+          <div className="section-title">{t("wizard.step2")}</div>
+          <div className="form-row">
+            <input
+              className="input"
+              value={outputSubfolder}
+              onChange={(e) => setOutputSubfolder(e.target.value)}
+              placeholder="Transcripts"
+            />
+          </div>
+          <div className="row-actions">
+            <Button variant="ghost" onClick={() => setStep(1)}>
+              {t("wizard.back")}
+            </Button>
+            <Button variant="primary" onClick={() => setStep(3)}>
+              {t("wizard.next")}
+            </Button>
           </div>
         </div>
       )}
 
       {step === 3 && (
         <div>
-          <h3>Шаг 3: Модель и метки времени</h3>
-          <div>
+          <div className="section-title">{t("wizard.step3")}</div>
+          <div className="form-row">
             <label>
-              Модель:
+              {t("settings.transcription.model")}
               <select
+                className="select"
                 value={modelSize}
                 onChange={(e) =>
                   setModelSize(
@@ -104,26 +133,28 @@ export default function Wizard({ onFinished }: Props) {
               </select>
             </label>
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div className="form-row">
             <label>
               <input
                 type="checkbox"
                 checked={includeTimestamps}
                 onChange={(e) => setIncludeTimestamps(e.target.checked)}
               />{" "}
-              Показывать метки времени в интерфейсе
+              {t("wizard.timestamps")}
             </label>
           </div>
-          <div style={{ marginTop: 16 }}>
-            <button onClick={() => setStep(2)}>Назад</button>
-            <button onClick={finish} style={{ marginLeft: 8 }}>
-              Готово
-            </button>
+          <div className="row-actions">
+            <Button variant="ghost" onClick={() => setStep(2)}>
+              {t("wizard.back")}
+            </Button>
+            <Button variant="primary" onClick={finish}>
+              {t("wizard.done")}
+            </Button>
           </div>
         </div>
       )}
 
-      {error && <div style={{ color: "red" }}>{error}</div>}
-    </div>
+      {error && <div className="text-muted" style={{ marginTop: 12 }}>{error}</div>}
+    </Card>
   );
 }

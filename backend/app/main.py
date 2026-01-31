@@ -7,6 +7,7 @@ import os
 import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -15,7 +16,9 @@ from app.jobs import (
     list_jobs,
     get_job,
     cancel_job,
+    delete_job,
     create_job_from_upload,
+    create_job_from_path,
     get_segments,
     export_job_to_obsidian,
     create_clip,
@@ -158,6 +161,23 @@ def create_job(file: UploadFile = File(...)) -> dict:
     return job.to_dict()
 
 
+class JobPathRequest(BaseModel):
+    path: str
+
+
+@app.post("/jobs/from-path")
+def create_job_from_path_endpoint(payload: JobPathRequest) -> dict:
+    if not payload.path.lower().endswith(".mp3"):
+        raise HTTPException(status_code=400, detail="Only .mp3 files are supported")
+    try:
+        job = create_job_from_path(Path(payload.path))
+        return job.to_dict()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @app.get("/jobs")
 def list_jobs_endpoint() -> list:
     return list_jobs()
@@ -174,6 +194,14 @@ def get_job_endpoint(job_id: str) -> dict:
 @app.post("/jobs/{job_id}/cancel")
 def cancel_job_endpoint(job_id: str) -> dict:
     ok = cancel_job(job_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {"ok": True}
+
+
+@app.post("/jobs/{job_id}/delete")
+def delete_job_endpoint(job_id: str) -> dict:
+    ok = delete_job(job_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Job not found")
     return {"ok": True}

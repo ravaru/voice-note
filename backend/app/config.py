@@ -37,6 +37,27 @@ class AppConfig:
     # Defaults align with local Ollama installation and a strong RU-capable instruct model.
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b-instruct"
+    # Prompt template for summarization; supports {text} placeholder.
+    summary_prompt: str = (
+        "Сделай Summary по расшифровке.\n"
+        "Пиши только по-русски. Не выдумывай фактов.\n"
+        "Если данных нет — '— Не зафиксировано'.\n"
+        "Верни ТОЛЬКО Markdown по шаблону ниже и ничего лишнего.\n"
+        "Шаблон:\n"
+        "## Summary\n"
+        "### Коротко (TL;DR)\n"
+        "- ...\n\n"
+        "### Ключевые тезисы\n"
+        "- ...\n\n"
+        "### Решения\n"
+        "- ... (если нет — '— Не зафиксировано')\n\n"
+        "### Действия (action items)\n"
+        "- [ ] ... (если нет — '— Не зафиксировано')\n\n"
+        "### Открытые вопросы\n"
+        "- ... (если нет — '— Не зафиксировано')\n"
+        "Текст:\n"
+        "{text}\n"
+    )
     include_timestamps: bool = True
     watch_inbox_enabled: bool = False
     inbox_poll_seconds: int = 8
@@ -60,9 +81,11 @@ class AppConfig:
             ),
             ollama_base_url=str(data.get("ollama_base_url", "http://127.0.0.1:11434")),
             ollama_model=str(data.get("ollama_model", "qwen2.5:7b-instruct")),
+            summary_prompt=str(data.get("summary_prompt", cls().summary_prompt)),
             include_timestamps=bool(data.get("include_timestamps", True)),
-            watch_inbox_enabled=bool(data.get("watch_inbox_enabled", False)),
-            inbox_poll_seconds=int(data.get("inbox_poll_seconds", 8)),
+            # Inbox polling is disabled; keep values fixed to prevent accidental enabling.
+            watch_inbox_enabled=False,
+            inbox_poll_seconds=8,
         )
 
 
@@ -94,6 +117,7 @@ def save_config(cfg: AppConfig) -> None:
         f"auto_summarize_after_transcription = {'true' if cfg.auto_summarize_after_transcription else 'false'}",
         f"ollama_base_url = {cfg.ollama_base_url!r}",
         f"ollama_model = {cfg.ollama_model!r}",
+        f"summary_prompt = {cfg.summary_prompt!r}",
         f"include_timestamps = {'true' if cfg.include_timestamps else 'false'}",
         f"watch_inbox_enabled = {'true' if cfg.watch_inbox_enabled else 'false'}",
         f"inbox_poll_seconds = {int(cfg.inbox_poll_seconds)}",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import threading
 import time
 import uuid
@@ -140,6 +141,26 @@ def cancel_job(job_id: str) -> bool:
         return True
 
 
+def delete_job(job_id: str) -> bool:
+    """Remove job from memory and delete its artifacts on disk."""
+    with _LOCK:
+        job = _JOBS.pop(job_id, None)
+        if not job:
+            return False
+        # Remove from queue if present.
+        if job_id in _QUEUE:
+            _QUEUE[:] = [jid for jid in _QUEUE if jid != job_id]
+
+    try:
+        job_dir = OUT_DIR / job_id
+        if job_dir.exists():
+            shutil.rmtree(job_dir)
+    except Exception:
+        # Ignore filesystem errors to keep API simple.
+        pass
+    return True
+
+
 def create_job_from_upload(filename: str, data: bytes) -> Job:
     """Create job and save uploaded MP3 bytes to disk."""
 
@@ -162,6 +183,42 @@ def create_job_from_upload(filename: str, data: bytes) -> Job:
     )
 
     _append_log(job, "Job created")
+
+    with _LOCK:
+        _JOBS[job_id] = job
+        _QUEUE.append(job_id)
+        _QUEUE_EVENT.set()
+
+    return job
+
+
+def create_job_from_path(mp3_path: Path) -> Job:
+    """Create job by copying an existing MP3 file into the job folder."""
+
+    if not mp3_path.exists():
+        raise FileNotFoundError(f"File not found: {mp3_path}")
+    if mp3_path.suffix.lower() != ".mp3":
+        raise ValueError("Only .mp3 files are supported")
+
+    ensure_app_dirs()
+    job_id = uuid.uuid4().hex
+    paths = ensure_job_dir(job_id)
+
+    target = paths.original_mp3
+    shutil.copy2(mp3_path, target)
+
+    job = Job(
+        id=job_id,
+        filename=mp3_path.name,
+        status=STATUS_QUEUED,
+        progress=0,
+        stage=STAGE_CONVERT,
+        logs=[],
+        created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        audio_path=str(target),
+    )
+
+    _append_log(job, f"Job created from path {mp3_path}")
 
     with _LOCK:
         _JOBS[job_id] = job
@@ -296,6 +353,7 @@ def _process_job(job: Job) -> None:
                     model=_CONFIG.ollama_model,
                     enable=_CONFIG.enable_summarization,
                     auto=_CONFIG.auto_summarize_after_transcription,
+                    prompt_template=_CONFIG.summary_prompt,
                 )
                 summary_md = summarize_transcript(transcript_text, summary_cfg)
                 summary_status = "done"
@@ -548,6 +606,7 @@ def summarize_job(job_id: str) -> dict:
                 model=_CONFIG.ollama_model,
                 enable=_CONFIG.enable_summarization,
                 auto=_CONFIG.auto_summarize_after_transcription,
+                prompt_template=_CONFIG.summary_prompt,
             )
             summary_md = summarize_transcript(transcript_text, summary_cfg)
             summary_status = "done"

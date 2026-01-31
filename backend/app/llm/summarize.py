@@ -33,13 +33,15 @@ class SummarizationConfig:
     model: str
     enable: bool
     auto: bool
-    temperature: float = 0.2
+    temperature: float = 0.15
     top_p: float = 0.9
-    max_tokens: int = 800
+    repeat_penalty: float = 1.12
+    num_predict: int = 900
     timeout_sec: float = 90.0
     retry_count: int = 1
     min_chunk_chars: int = 3000
     max_chunk_chars: int = 6000
+    prompt_template: str = ""
 
 
 SUMMARY_TEMPLATE = """## Summary
@@ -190,6 +192,27 @@ def _prompt_for_full(text: str) -> str:
     )
 
 
+def _build_prompt(template: str, text: str, summaries: Optional[List[str]] = None) -> str:
+    """Build prompt from a user template.
+
+    Supports {text} for raw transcript and {summaries} for reduce step.
+    If placeholders are missing, we append the relevant content.
+    """
+
+    prompt = template.strip()
+    if "{summaries}" in prompt and summaries is not None:
+        prompt = prompt.replace("{summaries}", "\n".join(summaries))
+    elif summaries is not None:
+        prompt = f"{prompt}\nМини-сводки:\n" + "\n".join(summaries)
+
+    if "{text}" in prompt:
+        prompt = prompt.replace("{text}", text)
+    elif text:
+        prompt = f"{prompt}\nТекст:\n{text}\n"
+
+    return prompt
+
+
 def _call_ollama(prompt: str, cfg: SummarizationConfig) -> str:
     """Call Ollama with retries and consistent options."""
 
@@ -202,7 +225,8 @@ def _call_ollama(prompt: str, cfg: SummarizationConfig) -> str:
                 prompt=prompt,
                 temperature=cfg.temperature,
                 top_p=cfg.top_p,
-                max_tokens=cfg.max_tokens,
+                repeat_penalty=cfg.repeat_penalty,
+                num_predict=cfg.num_predict,
                 timeout_sec=cfg.timeout_sec,
             )
         except Exception as exc:
@@ -235,7 +259,11 @@ def summarize_transcript(text: str, cfg: SummarizationConfig) -> str:
 
     chunks = chunk_text(clean, cfg.min_chunk_chars, cfg.max_chunk_chars)
     if len(chunks) <= 1:
-        prompt = _prompt_for_full(clean)
+        prompt = (
+            _build_prompt(cfg.prompt_template, clean)
+            if cfg.prompt_template
+            else _prompt_for_full(clean)
+        )
         return _call_ollama(prompt, cfg).strip()
 
     # Map step: generate mini summaries per chunk.
@@ -244,4 +272,9 @@ def summarize_transcript(text: str, cfg: SummarizationConfig) -> str:
         mini_summaries.append(_call_ollama(_prompt_for_chunk(chunk), cfg).strip())
 
     # Reduce step: build final summary in strict template.
-    return _call_ollama(_prompt_for_reduce(mini_summaries), cfg).strip()
+    reduce_prompt = (
+        _build_prompt(cfg.prompt_template, "", mini_summaries)
+        if cfg.prompt_template
+        else _prompt_for_reduce(mini_summaries)
+    )
+    return _call_ollama(reduce_prompt, cfg).strip()

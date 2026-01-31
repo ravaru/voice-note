@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getSegments, getClipUrl } from "../api/client";
 import type { Segment } from "../api/types";
+import { useI18n } from "../i18n/I18nProvider";
 
 function formatHHMMSS(seconds: number): string {
   // Simple HH:MM:SS formatter; we keep it in UI to avoid extra endpoint.
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function TranscriptViewer({ jobId }: Props) {
+  const { t } = useI18n();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
 
@@ -41,13 +43,13 @@ export default function TranscriptViewer({ jobId }: Props) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <h3>Расшифровка</h3>
+      <h3>{t("transcript.title")}</h3>
 
       <div style={{ marginBottom: 12 }}>
         {audioSrc ? (
           <audio controls src={audioSrc} />
         ) : (
-          <div>Нажмите на сегмент, чтобы воспроизвести его аудиоклип.</div>
+          <div>{t("transcript.play_hint")}</div>
         )}
       </div>
 
@@ -60,7 +62,7 @@ export default function TranscriptViewer({ jobId }: Props) {
           background: "#fff",
         }}
       >
-        {segments.length === 0 && <div>Сегментов пока нет.</div>}
+        {segments.length === 0 && <div>{t("transcript.empty_segments")}</div>}
         {segments.map((seg, idx) => (
           <div
             key={idx}
@@ -76,9 +78,9 @@ export default function TranscriptViewer({ jobId }: Props) {
         ))}
       </div>
 
-      <h4 style={{ marginTop: 16 }}>Полный текст</h4>
+      <h4 style={{ marginTop: 16 }}>{t("transcript.full_text")}</h4>
       <div style={{ whiteSpace: "pre-wrap", background: "#fafafa", padding: 12 }}>
-        {fullText || "(пусто)"}
+        {fullText || t("transcript.empty_text")}
       </div>
     </div>
   );

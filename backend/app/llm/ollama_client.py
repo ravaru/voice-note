@@ -45,7 +45,8 @@ def generate(
     prompt: str,
     temperature: float = 0.2,
     top_p: float = 0.9,
-    max_tokens: int = 800,
+    repeat_penalty: float = 1.0,
+    num_predict: int = 800,
     timeout_sec: float = 90.0,
 ) -> str:
     """Call Ollama /api/generate and return the response text.
@@ -62,7 +63,8 @@ def generate(
         "options": {
             "temperature": temperature,
             "top_p": top_p,
-            "num_predict": max_tokens,
+            "repeat_penalty": repeat_penalty,
+            "num_predict": num_predict,
         },
     }
 

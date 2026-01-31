@@ -60,6 +60,7 @@ export type AppConfig = {
   auto_summarize_after_transcription?: boolean;
   ollama_base_url?: string;
   ollama_model?: string;
+  summary_prompt?: string;
   enable_summarization?: boolean;
   auto_summarize_after_transcription?: boolean;
   ollama_base_url?: string;

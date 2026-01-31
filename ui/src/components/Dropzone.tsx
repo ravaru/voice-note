@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 
 type Props = {
   onFiles: (files: FileList) => void;
@@ -6,6 +7,7 @@ type Props = {
 
 // Minimal dropzone that accepts mp3 files.
 export default function Dropzone({ onFiles }: Props) {
+  const { t } = useI18n();
   const [isDragging, setIsDragging] = useState(false);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -41,7 +43,7 @@ export default function Dropzone({ onFiles }: Props) {
         background: isDragging ? "#f4f4f4" : "transparent",
       }}
     >
-      <p>Перетащите MP3 файлы сюда</p>
+      <p>{t("dropzone.hint")}</p>
       <input
         type="file"
         accept="audio/mpeg"

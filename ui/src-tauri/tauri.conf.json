@@ -19,7 +19,8 @@
         "title": "VoiceNote",
         "width": 1000,
         "height": 720,
-        "resizable": true
+        "resizable": true,
+        "dragDropEnabled": true
       }
     ]
   },

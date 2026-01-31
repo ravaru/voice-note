@@ -89,8 +89,16 @@ export async function createJob(file: File): Promise<Job> {
   return res.json() as Promise<Job>;
 }
 
+export async function createJobFromPath(path: string): Promise<Job> {
+  return apiPost<Job>("/jobs/from-path", { path });
+}
+
 export async function cancelJob(id: string): Promise<void> {
   await apiPost(`/jobs/${id}/cancel`);
+}
+
+export async function deleteJob(id: string): Promise<void> {
+  await apiPost(`/jobs/${id}/delete`);
 }
 
 export async function exportJobToObsidian(id: string): Promise<void> {

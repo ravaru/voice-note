@@ -7,10 +7,12 @@ import MarkdownPreview from "../components/MarkdownPreview";
 import SummaryViewer from "../components/SummaryViewer";
 import { createJob, getJobs, cancelJob, exportJobToObsidian } from "../api/client";
 import type { Job } from "../api/types";
+import { useI18n } from "../i18n/I18nProvider";
 
 const POLL_INTERVAL_MS = 1000;
 
 export default function Transcribe() {
+  const { t } = useI18n();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
@@ -59,7 +61,9 @@ export default function Transcribe() {
 
       {selectedJob && (
         <div style={{ marginTop: 24 }}>
-          <h3>Задание: {selectedJob.filename}</h3>
+          <h3>
+            {t("transcribe.task")}: {selectedJob.filename}
+          </h3>
           <LogViewer logs={selectedJob.logs || []} />
 
           {/* Transcript viewer fetches segments on its own */}
@@ -70,7 +74,7 @@ export default function Transcribe() {
 
           {selectedJob.md_preview && (
             <div style={{ marginTop: 16 }}>
-              <h4>Предпросмотр Markdown</h4>
+              <h4>{t("markdown.preview")}</h4>
               <MarkdownPreview markdown={selectedJob.md_preview} />
             </div>
           )}
