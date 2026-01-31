@@ -5,6 +5,15 @@ backend/**/*.pyc
 backend/.pytest_cache/
 backend/.mypy_cache/
 backend/config.toml
+backend/plaud_stt_obsidian_backend.egg-info/
+.coverage
+coverage.xml
+htmlcov/
+pytest-report.html
+junit*.xml
+test-results/
+backend/test-results/
+backend/.tox/
 
 # Node
 ui/node_modules/
@@ -18,6 +27,18 @@ ui/src-tauri/target/
 backend/out/
 backend/tmp/
 backend/inbox/
+backend/models/
+backend/model_cache/
+backend/.cache/
+backend/.huggingface/
+backend/.torch/
+backend/.whisper/
+models/
+.cache/
+.huggingface/
+.torch/
+torch_cache/
+hf_cache/
 
 # OS
 .DS_Store
