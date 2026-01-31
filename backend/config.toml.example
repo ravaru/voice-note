@@ -1,0 +1,16 @@
+# Example config. Copy to config.toml and edit as needed.
+# The app will create config.toml on first Wizard completion.
+
+initialized = false
+vault_path = ""
+output_subfolder = "Transcripts"
+model_size = "small" # "tiny", "small", "medium", or "large-v3"
+preload_model = false
+language = "ru"
+enable_summarization = true
+auto_summarize_after_transcription = true
+ollama_base_url = "http://127.0.0.1:11434"
+ollama_model = "qwen2.5:7b-instruct"
+include_timestamps = true
+watch_inbox_enabled = false
+inbox_poll_seconds = 8

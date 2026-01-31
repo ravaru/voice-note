@@ -1,0 +1,25 @@
+:root {
+  --app-padding: 16px;
+  --titlebar-offset: env(titlebar-area-height, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+.app-shell {
+  height: 100%;
+  overflow: auto;
+  padding: calc(var(--app-padding) + var(--titlebar-offset) + var(--safe-top))
+    var(--app-padding)
+    var(--app-padding);
+  font-family: sans-serif;
+}

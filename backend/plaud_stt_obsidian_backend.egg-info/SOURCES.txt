@@ -1,0 +1,13 @@
+pyproject.toml
+app/__init__.py
+app/config.py
+app/jobs.py
+app/main.py
+plaud_stt_obsidian_backend.egg-info/PKG-INFO
+plaud_stt_obsidian_backend.egg-info/SOURCES.txt
+plaud_stt_obsidian_backend.egg-info/dependency_links.txt
+plaud_stt_obsidian_backend.egg-info/requires.txt
+plaud_stt_obsidian_backend.egg-info/top_level.txt
+tests/test_md_export.py
+tests/test_paths.py
+tests/test_timefmt.py

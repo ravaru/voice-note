@@ -1,0 +1,23 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/config.toml
+
+# Node
+ui/node_modules/
+ui/dist/
+ui/.vite/
+
+# Tauri
+ui/src-tauri/target/
+
+# Artifacts
+backend/out/
+backend/tmp/
+backend/inbox/
+
+# OS
+.DS_Store

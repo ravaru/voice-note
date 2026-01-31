@@ -1,0 +1,10 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for MVP",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "shell:allow-open"
+  ]
+}

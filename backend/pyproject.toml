@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plaud-stt-obsidian-backend"
+version = "0.1.0"
+description = "FastAPI backend for local transcription to Obsidian"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+# Runtime dependencies for actual pipeline.
+# Note: torch/silero-vad/faster-whisper can be heavy; they are required for full pipeline.
+dependencies = [
+  "fastapi>=0.110.0",
+  "uvicorn>=0.23.0",
+  "python-multipart>=0.0.6",
+  "pydantic>=2.6.0",
+  "faster-whisper>=1.0.0",
+  "huggingface_hub>=0.20.0",
+  "silero-vad>=0.4.0",
+  "torch>=2.0.0",
+  "tomli>=2.0.0",
+]
+
+[project.optional-dependencies]
+# Test deps kept separate so runtime stays minimal.
+test = [
+  "pytest>=7.0.0",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
